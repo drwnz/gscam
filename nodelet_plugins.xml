@@ -1,7 +1,7 @@
-<library path="lib/libGSCamNodelet">
+<library path="lib/libGSCamX2Nodelet">
   <class 
-    name="gscam/GSCamNodelet" 
-    type="gscam::GSCamNodelet" 
+    name="gscam_x2/GSCamX2Nodelet" 
+    type="gscam_x2::GSCamX2Nodelet" 
     base_class_type="nodelet::Nodelet">
     <description>
       Nodelet for publishing a ROS camera interface from a GStreamer stream.

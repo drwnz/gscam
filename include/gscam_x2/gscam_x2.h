@@ -1,5 +1,5 @@
-#ifndef __GSCAM_GSCAM_H
-#define __GSCAM_GSCAM_H
+#ifndef __GSCAM_X2_GSCAM_X2_H
+#define __GSCAM_X2_GSCAM_X2_H
 
 extern "C"{
 #include <gst/gst.h>
@@ -17,12 +17,12 @@ extern "C"{
 
 #include <stdexcept>
 
-namespace gscam {
+namespace gscam_x2 {
 
-  class GSCam {
+  class GSCamX2 {
   public:
-    GSCam(ros::NodeHandle nh_camera, ros::NodeHandle nh_private);
-    ~GSCam();
+    GSCamX2(ros::NodeHandle nh_camera, ros::NodeHandle nh_private);
+    ~GSCamX2();
 
     bool configure();
     bool init_stream();
@@ -66,4 +66,4 @@ namespace gscam {
 
 }
 
-#endif // ifndef __GSCAM_GSCAM_H
+#endif // ifndef __GSCAM_X2_GSCAM_X2_H

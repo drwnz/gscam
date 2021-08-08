@@ -25,11 +25,11 @@ extern "C"{
 
 #include <camera_calibration_parsers/parse_ini.h>
 
-#include <gscam/gscam.h>
+#include <gscam_x2/gscam_x2.h>
 
-namespace gscam {
+namespace gscam_x2 {
 
-  GSCam::GSCam(ros::NodeHandle nh_camera, ros::NodeHandle nh_private) :
+  GSCamX2::GSCamX2(ros::NodeHandle nh_camera, ros::NodeHandle nh_private) :
     gsconfig_(""),
     pipeline_(NULL),
     sink_(NULL),
@@ -40,11 +40,11 @@ namespace gscam {
   {
   }
 
-  GSCam::~GSCam()
+  GSCamX2::~GSCamX2()
   {
   }
 
-  bool GSCam::configure()
+  bool GSCamX2::configure()
   {
     // Get gstreamer configuration
     // (either from environment variable or ROS param)
@@ -52,14 +52,14 @@ namespace gscam {
     bool gsconfig_rosparam_defined = false;
     char *gsconfig_env = NULL;
 
-    gsconfig_rosparam_defined = nh_private_.getParam("gscam_config",gsconfig_rosparam);
-    gsconfig_env = getenv("GSCAM_CONFIG");
+    gsconfig_rosparam_defined = nh_private_.getParam("gscam_x2_config",gsconfig_rosparam);
+    gsconfig_env = getenv("GSCAM_X2_CONFIG");
 
     if (!gsconfig_env && !gsconfig_rosparam_defined) {
-      ROS_FATAL( "Problem getting GSCAM_CONFIG environment variable and 'gscam_config' rosparam is not set. This is needed to set up a gstreamer pipeline." );
+      ROS_FATAL( "Problem getting GSCAM_X2_CONFIG environment variable and 'gscam_x2_config' rosparam is not set. This is needed to set up a gstreamer pipeline." );
       return false;
     } else if(gsconfig_env && gsconfig_rosparam_defined) {
-      ROS_FATAL( "Both GSCAM_CONFIG environment variable and 'gscam_config' rosparam are set. Please only define one." );
+      ROS_FATAL( "Both GSCAM_CONFIG environment variable and 'gscam_x2_config' rosparam are set. Please only define one." );
       return false;
     } else if(gsconfig_env) {
       gsconfig_ = gsconfig_env;
@@ -107,7 +107,7 @@ namespace gscam {
     return true;
   }
 
-  bool GSCam::init_stream()
+  bool GSCamX2::init_stream()
   {
     if(!gst_is_initialized()) {
       // Initialize gstreamer pipeline
@@ -229,7 +229,7 @@ namespace gscam {
     return true;
   }
 
-  void GSCam::publish_stream()
+  void GSCamX2::publish_stream()
   {
     ROS_INFO_STREAM("Publishing stream...");
 
@@ -399,7 +399,7 @@ namespace gscam {
     }
   }
 
-  void GSCam::cleanup_stream()
+  void GSCamX2::cleanup_stream()
   {
     // Clean up
     ROS_INFO("Stopping gstreamer pipeline...");
@@ -410,7 +410,7 @@ namespace gscam {
     }
   }
 
-  void GSCam::run() {
+  void GSCamX2::run() {
     while(ros::ok()) {
       if(!this->configure()) {
         ROS_FATAL("Failed to configure gscam!");
