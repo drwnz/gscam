@@ -13,7 +13,6 @@ extern "C"{
 
 #include <ros/ros.h>
 
-#include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
 
 
@@ -35,7 +34,7 @@ namespace gscam_x2 {
     sink_(NULL),
     nh_(nh_camera),
     nh_private_(nh_private),
-    image_transport_(nh_camera),
+    //image_(nh_camera),
     camera_info_manager_(nh_camera)
   {
   }
@@ -223,7 +222,9 @@ namespace gscam_x2 {
         jpeg_pub_ = nh_.advertise<sensor_msgs::CompressedImage>("camera/image_raw/compressed",1);
         cinfo_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("camera/camera_info",1);
     } else {
-        camera_pub_ = image_transport_.advertiseCamera("camera/image_raw", 1);
+        //camera_pub_ = image_.advertiseCamera("camera/image_raw", 1);
+        camera_pub_ = nh_.advertise<sensor_msgs::Image>("camera/image_raw",1);
+        cinfo_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("camera/camera_info",1);
     }
 
     return true;
@@ -383,7 +384,8 @@ namespace gscam_x2 {
                   img->data.begin());
 
           // Publish the image/info
-          camera_pub_.publish(img, cinfo);
+          cinfo_pub_.publish(cinfo);
+          camera_pub_.publish(img);
       }
 
       // Release the buffer

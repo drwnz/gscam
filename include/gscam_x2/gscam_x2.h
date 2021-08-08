@@ -8,7 +8,6 @@ extern "C"{
 
 #include <ros/ros.h>
 
-#include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
 
 #include <sensor_msgs/Image.h>
@@ -56,9 +55,10 @@ namespace gscam_x2 {
     // Calibration between ros::Time and gst timestamps
     double time_offset_;
     ros::NodeHandle nh_, nh_private_;
-    image_transport::ImageTransport image_transport_;
+    // ros::Publisher image_;
     camera_info_manager::CameraInfoManager camera_info_manager_;
-    image_transport::CameraPublisher camera_pub_;
+    // image_transport::CameraPublisher camera_pub_;
+    ros::Publisher camera_pub_;
     // Case of a jpeg only publisher
     ros::Publisher jpeg_pub_;
     ros::Publisher cinfo_pub_;

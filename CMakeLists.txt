@@ -49,14 +49,14 @@ if(USE_ROSBUILD)
 else()
   # Use Catkin
   find_package(catkin REQUIRED 
-    COMPONENTS roscpp image_transport sensor_msgs nodelet
+    COMPONENTS roscpp sensor_msgs nodelet
     camera_calibration_parsers camera_info_manager
     )
 
   catkin_package(
     INCLUDE_DIRS include
     LIBRARIES gscam_x2
-    CATKIN_DEPENDS roscpp nodelet sensor_msgs image_transport
+    CATKIN_DEPENDS roscpp nodelet sensor_msgs
     camera_calibration_parsers camera_info_manager
     DEPENDS GSTREAMER GST_APP
     )
