@@ -451,11 +451,11 @@ namespace gscam_x2 {
       // Check current time - assume ROS uses best clock source
       // Fix this later to remove magic numbers
       ros::Time now = ros::Time::now();
-      // Wait until the last millisecond
+      // Wait until the last 10 millisecond
       while (now.nsec > target_nsec && now.nsec < end_nsec) {
         target_nsec = target_nsec + interval_nsec >= 1e9 ? start_nsec : target_nsec + interval_nsec;        
       }
-      int32_t wait_nsec = target_nsec < now.nsec ? 1e9 - now.nsec + target_nsec - 1e6 : target_nsec - now.nsec - 1e6;
+      int32_t wait_nsec = target_nsec < now.nsec ? 1e9 - now.nsec + target_nsec - 1e7 : target_nsec - now.nsec - 1e7;
       ros::Duration(0, wait_nsec).sleep();
 
       // Block the last millisecond
@@ -487,13 +487,13 @@ namespace gscam_x2 {
         break;
       }
 
-      if(!this->init_stream()) {
-        ROS_FATAL("Failed to initialize gscam stream!");
+      if(!this->init_triggering()) {
+        ROS_FATAL("Failed to initialize triggering!");
         break;
       }
 
-      if(!this->init_triggering()) {
-        ROS_FATAL("Failed to initialize triggering!");
+      if(!this->init_stream()) {
+        ROS_FATAL("Failed to initialize gscam stream!");
         break;
       }
 
@@ -503,9 +503,10 @@ namespace gscam_x2 {
       // Block while publishing
       this->publish_stream();
 
-      this->cleanup_stream();
-
+      // Wait for triggering thread to end
       triggering_thread.join();
+
+      this->cleanup_stream();
 
       ROS_INFO("GStreamer stream stopped!");
 
@@ -516,7 +517,6 @@ namespace gscam_x2 {
         break;
       }
     }
-
   }
 
   // Example callbacks for appsink
