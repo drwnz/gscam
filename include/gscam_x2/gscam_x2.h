@@ -25,8 +25,11 @@ namespace gscam_x2 {
 
     bool configure();
     bool init_stream();
+    bool init_triggering();
     void publish_stream();
     void cleanup_stream();
+
+    static void triggering(double fps, double phase);
 
     void run();
 
@@ -50,6 +53,11 @@ namespace gscam_x2 {
     std::string image_encoding_;
     std::string camera_name_;
     std::string camera_info_url_;
+
+    // Triggering configuration
+    double fps_;
+    double phase_;
+    int channel_;
 
     // ROS Inteface
     // Calibration between ros::Time and gst timestamps

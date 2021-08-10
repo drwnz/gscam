@@ -15,6 +15,7 @@ extern "C"{
 
 #include <camera_info_manager/camera_info_manager.h>
 
+#include <boost/thread/thread.hpp>
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CompressedImage.h>
@@ -78,6 +79,10 @@ namespace gscam_x2 {
     // Get the camera parameters file
     nh_private_.getParam("camera_info_url", camera_info_url_);
     nh_private_.getParam("camera_name", camera_name_);
+
+    // Get the triggering parameters
+    nh_private_.getParam("frame_rate", fps_);
+    nh_private_.getParam("phase", phase_);
 
     // Get the image encoding
     nh_private_.param("image_encoding", image_encoding_, sensor_msgs::image_encodings::RGB8);
@@ -236,6 +241,12 @@ namespace gscam_x2 {
 
     return true;
   }
+
+  bool GSCamX2::init_triggering()
+  {
+    // Configure GPIO
+    return true;
+  }  
 
   void GSCamX2::publish_stream()
   {
@@ -416,6 +427,47 @@ namespace gscam_x2 {
     }
   }
 
+  void GSCamX2::triggering(double fps, double phase)
+  {
+    // Start on the first time after TOS
+    int32_t start_nsec;
+    int32_t target_nsec;
+    int32_t interval_nsec = (int32_t)(1e9 / fps);
+    int32_t offset = 1e3;
+    // Fix this later to remove magic numbers
+    if (std::abs(phase) <= 1e-7) {
+      start_nsec = 0;
+    }
+    else {
+      start_nsec = (int32_t)interval_nsec * (phase / 360.0);
+    }
+    target_nsec = start_nsec;
+
+    while (ros::ok())
+    {
+      // Do triggering stuff
+      // Check current time - assume ROS uses best clock source
+      // Fix this later to remove magic numbers
+      ros::Time now = ros::Time::now();
+      // Wait until the last millisecond
+      if (now.nsec > target_nsec) {
+        ros::Duration(0, 1e9 - now.nsec + target_nsec - 1e3).sleep();
+      }
+      else {
+        ros::Duration(0, (target_nsec - now.nsec - 1e3) < 0 ? target_nsec - now.nsec : target_nsec - now.nsec - 1e3).sleep();
+      }
+      // Block the last millisecond
+      now = ros::Time::now();
+      while (now.nsec < (target_nsec - offset < 0 ? 1e9 - 1e3 : target_nsec - offset))
+      {
+        // Enter checking loop
+        now = ros::Time::now();
+      }
+      target_nsec = target_nsec + interval_nsec >= 1e9 ? start_nsec : target_nsec + interval_nsec;
+      ROS_INFO("Time: %d", now);
+    }
+  }
+
   void GSCamX2::cleanup_stream()
   {
     // Clean up
@@ -439,10 +491,20 @@ namespace gscam_x2 {
         break;
       }
 
+      if(!this->init_triggering()) {
+        ROS_FATAL("Failed to initialize triggering!");
+        break;
+      }
+
+      // Spawn triggering thread
+      boost::thread triggering_thread(triggering, fps_, phase_);
+
       // Block while publishing
       this->publish_stream();
 
       this->cleanup_stream();
+
+      triggering_thread.join();
 
       ROS_INFO("GStreamer stream stopped!");
 
