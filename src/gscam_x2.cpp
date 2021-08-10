@@ -431,6 +431,7 @@ namespace gscam_x2 {
   {
     // Start on the first time after TOS
     int32_t start_nsec;
+    int32_t end_nsec;
     int32_t target_nsec;
     int32_t interval_nsec = (int32_t)(1e9 / fps);
     int32_t offset = 1e3;
@@ -442,6 +443,7 @@ namespace gscam_x2 {
       start_nsec = (int32_t)interval_nsec * (phase / 360.0);
     }
     target_nsec = start_nsec;
+    end_nsec = start_nsec - interval_nsec + 1e9;
 
     while (ros::ok())
     {
@@ -450,21 +452,20 @@ namespace gscam_x2 {
       // Fix this later to remove magic numbers
       ros::Time now = ros::Time::now();
       // Wait until the last millisecond
-      if (now.nsec > target_nsec) {
-        ros::Duration(0, 1e9 - now.nsec + target_nsec - 1e3).sleep();
+      while (now.nsec > target_nsec && now.nsec < end_nsec) {
+        target_nsec = target_nsec + interval_nsec >= 1e9 ? start_nsec : target_nsec + interval_nsec;        
       }
-      else {
-        ros::Duration(0, (target_nsec - now.nsec - 1e3) < 0 ? target_nsec - now.nsec : target_nsec - now.nsec - 1e3).sleep();
-      }
+      int32_t wait_nsec = target_nsec < now.nsec ? 1e9 - now.nsec + target_nsec - 1e6 : target_nsec - now.nsec - 1e6;
+      ros::Duration(0, wait_nsec).sleep();
+
       // Block the last millisecond
       now = ros::Time::now();
-      while (now.nsec < (target_nsec - offset < 0 ? 1e9 - 1e3 : target_nsec - offset))
+      while (now.nsec < target_nsec || (target_nsec == start_nsec && now.nsec > end_nsec))
       {
-        // Enter checking loop
         now = ros::Time::now();
       }
       target_nsec = target_nsec + interval_nsec >= 1e9 ? start_nsec : target_nsec + interval_nsec;
-      ROS_INFO("Time: %d", now);
+      ROS_INFO("Time: %d", now.nsec);
     }
   }
 
