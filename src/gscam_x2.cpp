@@ -91,6 +91,7 @@ namespace gscam_x2 {
     if (image_encoding_ != sensor_msgs::image_encodings::RGB8 &&
         image_encoding_ != sensor_msgs::image_encodings::MONO8 &&
         image_encoding_ != sensor_msgs::image_encodings::YUV422 &&
+        image_encoding_ != "png" &&
         image_encoding_ != "jpeg") {
       ROS_FATAL_STREAM("Unsupported image encoding: " + image_encoding_);
     }
@@ -152,6 +153,8 @@ namespace gscam_x2 {
             NULL); 
     } else if (image_encoding_ == "jpeg") {
         caps = gst_caps_new_simple("image/jpeg", NULL, NULL);
+    } else if (image_encoding_ == "png") {
+        caps = gst_caps_new_simple("image/png", NULL, NULL);
     }
 #else
     if (image_encoding_ == sensor_msgs::image_encodings::RGB8) {
@@ -162,6 +165,8 @@ namespace gscam_x2 {
         caps = gst_caps_new_simple("video/x-raw-yuv", NULL, NULL);
     } else if (image_encoding_ == "jpeg") {
         caps = gst_caps_new_simple("image/jpeg", NULL, NULL);
+    } else if (image_encoding_ == "png") {
+        caps = gst_caps_new_simple("image/png", NULL, NULL);
     }
 #endif
 
@@ -233,6 +238,9 @@ namespace gscam_x2 {
 
     // Create ROS camera interface
     if (image_encoding_ == "jpeg") {
+        jpeg_pub_ = nh_.advertise<sensor_msgs::CompressedImage>("image_raw/compressed",1);
+        cinfo_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("camera_info",1);
+    } else if (image_encoding_ == "png") {
         jpeg_pub_ = nh_.advertise<sensor_msgs::CompressedImage>("image_raw/compressed",1);
         cinfo_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("camera_info",1);
     } else {
@@ -360,6 +368,15 @@ namespace gscam_x2 {
           sensor_msgs::CompressedImagePtr img(new sensor_msgs::CompressedImage());
           img->header = cinfo->header;
           img->format = "jpeg";
+          img->data.resize(buf_size);
+          std::copy(buf_data, (buf_data)+(buf_size),
+                  img->data.begin());
+          jpeg_pub_.publish(img);
+          cinfo_pub_.publish(cinfo);
+      } else if (image_encoding_ == "png") {
+          sensor_msgs::CompressedImagePtr img(new sensor_msgs::CompressedImage());
+          img->header = cinfo->header;
+          img->format = "png";
           img->data.resize(buf_size);
           std::copy(buf_data, (buf_data)+(buf_size),
                   img->data.begin());
