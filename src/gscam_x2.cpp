@@ -478,14 +478,8 @@ namespace gscam_x2 {
       // Trigger!
       status = gpio.write(1);
       ros::Time now2 = ros::Time::now();
-      if (status != mraa::SUCCESS) {
-        ROS_ERROR("Trigger attempted,failed with error: %d", status);
-      }
       ros::Duration(0, pulse_width).sleep();
-      status = gpio.write(0);
-      if (status != mraa::SUCCESS) {
-        ROS_ERROR("Trigger attempted,failed with error: %d", status);
-      }    
+      status = gpio.write(0);  
       target_nsec = target_nsec + interval_nsec >= 1e9 ? start_nsec : target_nsec + interval_nsec;
       //ROS_INFO("Time: %d, trigger interval: %d", now.nsec, (now2 - now).nsec);
     }
