@@ -27,6 +27,7 @@ extern "C"{
 
 #include <gscam_x2/gscam_x2.h>
 
+
 namespace gscam_x2 {
 
   GSCamX2::GSCamX2(ros::NodeHandle nh_camera, ros::NodeHandle nh_private) :
@@ -83,6 +84,7 @@ namespace gscam_x2 {
     // Get the triggering parameters
     nh_private_.getParam("frame_rate", fps_);
     nh_private_.getParam("phase", phase_);
+    nh_private_.getParam("gpio", gpio_);
 
     // Get the image encoding
     nh_private_.param("image_encoding", image_encoding_, sensor_msgs::image_encodings::RGB8);
@@ -231,12 +233,12 @@ namespace gscam_x2 {
 
     // Create ROS camera interface
     if (image_encoding_ == "jpeg") {
-        jpeg_pub_ = nh_.advertise<sensor_msgs::CompressedImage>("camera/image_raw/compressed",1);
-        cinfo_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("camera/camera_info",1);
+        jpeg_pub_ = nh_.advertise<sensor_msgs::CompressedImage>("image_raw/compressed",1);
+        cinfo_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("camera_info",1);
     } else {
         //camera_pub_ = image_.advertiseCamera("camera/image_raw", 1);
-        camera_pub_ = nh_.advertise<sensor_msgs::Image>("camera/image_raw",1);
-        cinfo_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("camera/camera_info",1);
+        camera_pub_ = nh_.advertise<sensor_msgs::Image>("image_raw",1);
+        cinfo_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("camera_info",1);
     }
 
     return true;
@@ -244,9 +246,9 @@ namespace gscam_x2 {
 
   bool GSCamX2::init_triggering()
   {
-    // Configure GPIO
+    // Not yet implemented
     return true;
-  }  
+  }
 
   void GSCamX2::publish_stream()
   {
@@ -427,14 +429,23 @@ namespace gscam_x2 {
     }
   }
 
-  void GSCamX2::triggering(double fps, double phase)
+  void GSCamX2::triggering(double fps, double phase, int gpio_pin)
   {
+    // Configure the GPIO
+    mraa::Gpio gpio(gpio_pin);
+    // Set GPIO to output
+    mraa::Result status = gpio.dir(mraa::DIR_OUT);
+    if (status != mraa::SUCCESS) {
+        ROS_ERROR("GPIO initialization error: %d", status);
+        ROS_ERROR("No trigger will be generated");
+    }
     // Start on the first time after TOS
     int32_t start_nsec;
     int32_t end_nsec;
     int32_t target_nsec;
     int32_t interval_nsec = (int32_t)(1e9 / fps);
     int32_t offset = 1e3;
+    int32_t pulse_width = 5e6;
     // Fix this later to remove magic numbers
     if (std::abs(phase) <= 1e-7) {
       start_nsec = 0;
@@ -464,8 +475,19 @@ namespace gscam_x2 {
       {
         now = ros::Time::now();
       }
+      // Trigger!
+      status = gpio.write(1);
+      ros::Time now2 = ros::Time::now();
+      if (status != mraa::SUCCESS) {
+        ROS_ERROR("Trigger attempted,failed with error: %d", status);
+      }
+      ros::Duration(0, pulse_width).sleep();
+      status = gpio.write(0);
+      if (status != mraa::SUCCESS) {
+        ROS_ERROR("Trigger attempted,failed with error: %d", status);
+      }    
       target_nsec = target_nsec + interval_nsec >= 1e9 ? start_nsec : target_nsec + interval_nsec;
-      ROS_INFO("Time: %d", now.nsec);
+      //ROS_INFO("Time: %d, trigger interval: %d", now.nsec, (now2 - now).nsec);
     }
   }
 
@@ -498,7 +520,7 @@ namespace gscam_x2 {
       }
 
       // Spawn triggering thread
-      boost::thread triggering_thread(triggering, fps_, phase_);
+      boost::thread triggering_thread(triggering, fps_, phase_, gpio_);
 
       // Block while publishing
       this->publish_stream();

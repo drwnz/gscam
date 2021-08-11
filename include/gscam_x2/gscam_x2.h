@@ -16,6 +16,10 @@ extern "C"{
 
 #include <stdexcept>
 
+/* mraa headers */
+#include "mraa/common.hpp"
+#include "mraa/gpio.hpp"
+
 namespace gscam_x2 {
 
   class GSCamX2 {
@@ -29,7 +33,7 @@ namespace gscam_x2 {
     void publish_stream();
     void cleanup_stream();
 
-    static void triggering(double fps, double phase);
+    static void triggering(double fps, double phase, int gpio_pin);
 
     void run();
 
@@ -58,6 +62,7 @@ namespace gscam_x2 {
     double fps_;
     double phase_;
     int channel_;
+    int gpio_;
 
     // ROS Inteface
     // Calibration between ros::Time and gst timestamps
