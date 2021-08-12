@@ -33,14 +33,14 @@ endif()
 
 find_library(MRAA_LIBRARIES libmraa.so ${MRAA_LIBRARY_PATH})
 find_package(catkin REQUIRED 
-  COMPONENTS roscpp sensor_msgs nodelet
+  COMPONENTS roscpp image_transport sensor_msgs nodelet
   camera_calibration_parsers camera_info_manager
   )
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES gscam_x2
-  CATKIN_DEPENDS roscpp nodelet sensor_msgs
+  CATKIN_DEPENDS roscpp nodelet sensor_msgs image_transport
   camera_calibration_parsers camera_info_manager
   DEPENDS GSTREAMER GST_APP
   )

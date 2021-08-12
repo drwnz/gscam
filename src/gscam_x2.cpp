@@ -13,6 +13,7 @@ extern "C"{
 
 #include <ros/ros.h>
 
+#include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
 
 #include <boost/thread/thread.hpp>
@@ -36,7 +37,7 @@ namespace gscam_x2 {
     sink_(NULL),
     nh_(nh_camera),
     nh_private_(nh_private),
-    //image_(nh_camera),
+    image_transport_(nh_camera),
     camera_info_manager_(nh_camera)
   {
   }
@@ -76,6 +77,7 @@ namespace gscam_x2 {
     nh_private_.param("use_gst_timestamps", use_gst_timestamps_, false);
 
     nh_private_.param("reopen_on_eof", reopen_on_eof_, false);
+    nh_private_.param("use_image_transport", use_image_transport_, true);
 
     // Get the camera parameters file
     nh_private_.getParam("camera_info_url", camera_info_url_);
@@ -243,8 +245,9 @@ namespace gscam_x2 {
     } else if (image_encoding_ == "png") {
         jpeg_pub_ = nh_.advertise<sensor_msgs::CompressedImage>("image_raw/compressed",1);
         cinfo_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("camera_info",1);
+    } else if (image_encoding_ != sensor_msgs::image_encodings::YUV422 && use_image_transport_ == true) {
+        image_transport_camera_pub_ = image_transport_.advertiseCamera("image_raw",1);
     } else {
-        //camera_pub_ = image_.advertiseCamera("camera/image_raw", 1);
         camera_pub_ = nh_.advertise<sensor_msgs::Image>("image_raw",1);
         cinfo_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("camera_info",1);
     }
@@ -429,8 +432,12 @@ namespace gscam_x2 {
                   img->data.begin());
 
           // Publish the image/info
-          cinfo_pub_.publish(cinfo);
-          camera_pub_.publish(img);
+          if (image_encoding_ != sensor_msgs::image_encodings::YUV422 && use_image_transport_ == true) {
+            image_transport_camera_pub_.publish(img, cinfo);
+          } else {
+            cinfo_pub_.publish(cinfo);
+            camera_pub_.publish(img);
+          }
       }
 
       // Release the buffer
