@@ -78,15 +78,16 @@ namespace gscam_x2 {
 
     nh_private_.param("reopen_on_eof", reopen_on_eof_, false);
     nh_private_.param("use_image_transport", use_image_transport_, true);
+    nh_private_.param("use_triggering", use_triggering_, true);
 
     // Get the camera parameters file
     nh_private_.getParam("camera_info_url", camera_info_url_);
     nh_private_.getParam("camera_name", camera_name_);
 
     // Get the triggering parameters
-    nh_private_.getParam("frame_rate", fps_);
-    nh_private_.getParam("phase", phase_);
-    nh_private_.getParam("gpio", gpio_);
+    nh_private_.param("frame_rate", fps_, 10);
+    nh_private_.param("phase", phase_, 0);
+    nh_private_.param("gpio", gpio_, 0);
 
     // Get the image encoding
     nh_private_.param("image_encoding", image_encoding_, sensor_msgs::image_encodings::RGB8);
@@ -527,7 +528,7 @@ namespace gscam_x2 {
         break;
       }
 
-      if(!this->init_triggering()) {
+      if(use_triggering_ && !this->init_triggering()) {
         ROS_FATAL("Failed to initialize triggering!");
         break;
       }
@@ -537,14 +538,19 @@ namespace gscam_x2 {
         break;
       }
 
-      // Spawn triggering thread
-      boost::thread triggering_thread(triggering, fps_, phase_, gpio_);
+      if(use_triggering_) {
+        // Spawn triggering thread
+        boost::thread triggering_thread(triggering, fps_, phase_, gpio_);
 
-      // Block while publishing
-      this->publish_stream();
+        // Block while publishing
+        this->publish_stream();
 
-      // Wait for triggering thread to end
-      triggering_thread.join();
+        // Wait for triggering thread to end
+        triggering_thread.join();
+      } else {
+        // Block while publishing
+        this->publish_stream();
+      }
 
       this->cleanup_stream();
 

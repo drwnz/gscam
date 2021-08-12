@@ -51,7 +51,6 @@ namespace gscam_x2 {
     bool preroll_;
     bool reopen_on_eof_;
     bool use_gst_timestamps_;
-    bool use_image_transport_;
 
     // Camera publisher configuration
     std::string frame_id_;
@@ -59,12 +58,14 @@ namespace gscam_x2 {
     std::string image_encoding_;
     std::string camera_name_;
     std::string camera_info_url_;
+    bool use_image_transport_;
 
     // Triggering configuration
     double fps_;
     double phase_;
     int channel_;
     int gpio_;
+    bool use_triggering_;
 
     // ROS Inteface
     // Calibration between ros::Time and gst timestamps
